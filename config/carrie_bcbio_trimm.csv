@@ -1,0 +1,5 @@
+samplename,description,long,adapters
+NEX_syn.fastq.gz,NEX_syn,NEXTflex_Miltenyi_Universal_synthetic_small_RNA_300ng_miRNA_input,"4N, TGGAATTCTCGGGTGCCAAGGAACTCCAG"
+NEB_syn.fastq.gz,NEB_syn,NEB_Miltenyi_Universal_synthetic_small_RNA_300ng_miRNA_input,"AGATCGGAAGAGCACACGTCTGAACTCC"
+Ill_syn.fastq.gz,Ill_syn,Illumina_Miltenyi_Universal_synthetic_small_RNA_300ng_miRNA_input,"TGGAATTCTCGGGTGCCAAGGAACTCCAG"
+Clo_syn.fastq.gz,Clo_syn,Clontech_Miltenyi_Universal_synthetic_small_RNA_300ng_miRNA_input,"AAAAAAAAAAAAAAAA"

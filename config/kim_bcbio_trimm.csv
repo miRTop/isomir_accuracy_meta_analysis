@@ -1,0 +1,8 @@
+samplenames,description,geo,adapters
+hek_ts_3.fastq.gz,hek_ts_3,GSM3508217,TGGAATTCTCGGGTGCC
+hela_aq_4.fastq.gz,hela_aq_4,GSM3508218,"TGGAATTCTCGGGTGCC,4N"
+hela_ts_6.fastq.gz,hela_ts_6,GSM3508220,TGGAATTCTCGGGTGCC
+hela_ts_7.fastq.gz,hela_ts_7,GSM3508221,TGGAATTCTCGGGTGCC
+hela_aq_5.fastq.gz,hela_aq_5,GSM3508219,"TGGAATTCTCGGGTGCC,4N"
+hek_aq_1.fastq.gz,hek_aq_1,GSM3508215,"TGGAATTCTCGGGTGCC,4N"
+hek_aq_2.fastq.gz,hek_aq_2,GSM3508216,"TGGAATTCTCGGGTGCC,4N"
