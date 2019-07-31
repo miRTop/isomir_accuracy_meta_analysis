@@ -3,3 +3,5 @@ wget https://github.com/miRTop/mirtop/blob/master/scripts/make_unique.py
 
 conda install mirtop razers3=3.5.0 -c conda-forge -c bioconda
 python make_unique.py  --fa data/tewari.fasta --out data/tewari_unique.fasta
+
+mirtop spikein -o data/tewari_reference data/tewari_unique.fasta 

@@ -25,6 +25,30 @@ https://academic.oup.com/nar/article/47/5/2630/5271499
 
 https://www.biorxiv.org/content/10.1101/445437v3
 
+### DSRG data
+
+Still to be published, another study to compare protocols using the mirxplor sample.
+
+
+## Processed data
+
+### standard analysis of synthetic
+
+Trimming was done with `bcbio` to accomodate all possible protocols.
+
+Analysis was done with [bowtie]  + [mirtop] in a [snakemake] file.
+
+Mirxplor reference was parsed to use only synthetic with an edit distance of 4 or more, and the alignments were filtered to keep only reads that mapped to those unique
+synthetic with a maximum of 4 changes.
+
+Data is available for anyone at [aws mirtop space](https://mirtop-tewari-data.s3.amazonaws.com/synthetic_2019_mirgff1.2.rds). 
+
+Currently contains: tewari, carrie and dsrg data. Waiting to be added the kim data set.
+
+### biological samples
+
+This is onhold for now.
+
 ## Tools
 
 * bcbio smallRNA-seq pipeline + isomiRs - On charge Lorena Pantano
@@ -63,3 +87,4 @@ Benchmark was done with synthetic isomiRs for one human miRNA, see [results](htt
 * open an issue to ask for access if you are a new collaborator
 * adapters for each sample is [Adaptors_to_remove.txt](Adaptors_to_remove.txt).
 * [pilot config data](tewari_mini.csv) used to test adapters are ok
+
