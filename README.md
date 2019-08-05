@@ -29,6 +29,15 @@ https://www.biorxiv.org/content/10.1101/445437v3
 
 Still to be published, another study to compare protocols using the mirxplor sample.
 
+### To be added if we get the data
+
+Evaluation of methodologies for microRNA biomarker detection by next generation sequencing
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6161688/
+issue: wrong ID number to download data. Contacted the author to get the data.
+
+Systematic assessment of commercially available low-input miRNA library preparation kits
+https://www.biorxiv.org/content/10.1101/702456v1.full
+No data yet.
 
 ## Processed data
 
