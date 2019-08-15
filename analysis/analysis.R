@@ -160,4 +160,8 @@ synthetic = bind_rows(
 )
 
 
+synthetic = synthetic %>% 
+    mutate(protocol=ifelse(protocol=="tru","ill",protocol),
+       protocol=ifelse(protocol=="ilmn","ill",protocol),
+       protocol=ifelse(grepl("nextf", short),"nex",protocol)) 
 saveRDS(synthetic, "data/synthetic_2019_mirgff1.2.rds")
