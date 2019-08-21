@@ -153,15 +153,59 @@ dsrg = gff %>%
     distinct() %>% 
     analysis
 
+# kim
+gff = read_tsv("input/synthetic_kim_mirtop.tsv") %>% 
+    janitor::clean_names() %>% 
+    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+normalized = norm(gff)
+kim = gff %>%
+    annotate %>%
+    left_join(normalized, by = c("sample", "read")) %>% 
+    separate(sample, c("lab", "protocol", "index"), remove = F, sep = "_") %>%
+    unite("short", c("protocol", "lab", "index"),
+          remove = FALSE) %>% 
+    select(-index) %>% 
+    distinct() %>% 
+    analysis %>% 
+    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+
+
+# fratta
+gff = read_tsv("input/synthetic_fratta_mirtop.tsv") %>% 
+    janitor::clean_names() %>% 
+    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+normalized = norm(gff)
+fratta = gff %>%
+    annotate %>%
+    left_join(normalized, by = c("sample", "read")) %>% 
+    separate(sample, c("id","protocol", "index"), remove = F, sep = "_", extra = "drop") %>%
+    mutate(lab="fratta") %>% 
+    unite("short", c("protocol", "lab", "index"),
+          remove = FALSE) %>% 
+    select(-index,-id) %>% 
+    distinct() %>% 
+    analysis %>% 
+    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+
+
 synthetic = bind_rows(
     tewari %>% mutate(study="tewari"),
-    carrie %>% mutate(study="carrie"),
-    dsrg %>% mutate(study="dsrg")
+    carrie %>% mutate(study="cwrigth"),
+    dsrg %>% mutate(study="dsrg"),
+    kim %>% mutate(study="nkim"),
+    fratta %>% mutate(study="fratta")
 )
 
 
 synthetic = synthetic %>% 
     mutate(protocol=ifelse(protocol=="tru","ill",protocol),
        protocol=ifelse(protocol=="ilmn","ill",protocol),
-       protocol=ifelse(grepl("nextf", short),"nex",protocol)) 
-saveRDS(synthetic, "data/synthetic_2019_mirgff1.2.rds")
+       protocol=ifelse(grepl("nextf", short),"nex",protocol),
+       protocol=ifelse(grepl("ts", short),"ill",protocol),
+       protocol=ifelse(grepl("peb", short),"nex",protocol),
+       protocol=ifelse(grepl("bsc", short),"nex",protocol)) 
+
+synthetic = synthetic %>% 
+    mutate(sample_n = as.numeric(as.factor(sample)))
+
+# saveRDS(synthetic, "data/synthetic_2019_mirgff1.2.rds")

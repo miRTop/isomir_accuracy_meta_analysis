@@ -56,24 +56,20 @@ synthetic %>%
 
 
 synthetic %>% 
-    group_by(short, study, protocol) %>%
+    filter(ref_is_1 == 1,total>500) %>%
+    group_by(sample_n, study, protocol) %>%
     mutate(libsize=log10(sum(value)),
            libsizen=n(),
            libsizem=length(unique(mi_rna)),
            iso=relevel(as.factor(iso), "reference")) %>% 
-    filter(total>500) %>% 
-    filter(ref_is_1 == 1) %>%
-    group_by(short, protocol, study, libsize, mi_rna, iso) %>% 
-    arrange(short, protocol, study, libsize, mi_rna, iso, desc(pct)) %>% 
+    group_by(sample_n, protocol, study, libsize, mi_rna, iso) %>% 
+    arrange(sample_n, protocol, study, libsize, mi_rna, iso, desc(pct)) %>% 
     top_n(1, wt = pct) %>% 
-    group_by(short, protocol, study, libsize, iso, pct_cat) %>% 
+    group_by(sample_n, protocol, study, libsize, iso, pct_cat) %>% 
     summarise(pct_total=sum(value)/unique(10^libsize)*100,
-              mirn_total=length(unique(mi_rna))) %>% 
+              mirn_total=length(unique(mi_rna))/unique(libsizem)*100) %>% 
     ungroup() %>% 
-    mutate(protocol=ifelse(protocol=="tru","ill",protocol),
-           protocol=ifelse(protocol=="ilmn","ill",protocol),
-           protocol=ifelse(grepl("nextf", short),"nex",protocol)) %>% 
-    ggplot(aes(x = paste(study, short),
+    ggplot(aes(x = paste(protocol, study, sample_n),
                y = mirn_total,
                alpha=pct_total,
                fill=pct_cat)) +
@@ -86,24 +82,20 @@ synthetic %>%
     ggsave("results/02_importance/all_samples_barplot_num_mirna.pdf", width=12, height = 9)    
 
 synthetic %>% 
-    group_by(short, study, protocol) %>% 
+    filter(ref_is_1 == 1,total>500, pct>5) %>%
+    group_by(sample_n, study, protocol) %>% 
     mutate(libsize=log10(sum(value)),
            libsizen=n(),
            libsizem=length(unique(mi_rna)),
            iso=relevel(as.factor(iso), "reference")) %>% 
-    filter(total>500, pct>5) %>% 
-    filter(ref_is_1 == 1) %>%
-    group_by(short, protocol, study, libsize, mi_rna, iso) %>% 
-    arrange(short, protocol, study, libsize, mi_rna, iso, desc(pct)) %>% 
+    group_by(sample_n, protocol, study, libsize, mi_rna, iso) %>% 
+    arrange(sample_n, protocol, study, libsize, mi_rna, iso, desc(pct)) %>% 
     top_n(1,wt = pct) %>% 
-    group_by(short, protocol, study, libsize, iso, pct_cat) %>% 
+    group_by(sample_n, protocol, study, libsize, iso, pct_cat) %>% 
     summarise(pct_total=sum(value)/unique(10^libsize)*100,
-              mirn_total=length(unique(mi_rna))) %>% 
+              mirn_total=length(unique(mi_rna))/unique(libsizem)*100) %>% 
     ungroup() %>% 
-    mutate(protocol=ifelse(protocol=="tru","ill",protocol),
-           protocol=ifelse(protocol=="ilmn","ill",protocol),
-           protocol=ifelse(grepl("nextf", short),"nex",protocol)) %>% 
-    ggplot(aes(x = paste(study, short),
+    ggplot(aes(x = paste(protocol, study, sample_n),
                y = mirn_total,
                alpha=pct_total,
                fill=pct_cat)) +
