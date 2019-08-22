@@ -203,9 +203,69 @@ synthetic = synthetic %>%
        protocol=ifelse(grepl("nextf", short),"nex",protocol),
        protocol=ifelse(grepl("ts", short),"ill",protocol),
        protocol=ifelse(grepl("peb", short),"nex",protocol),
-       protocol=ifelse(grepl("bsc", short),"nex",protocol)) 
+       protocol=ifelse(grepl("clt", short),"clo",protocol),
+       protocol=ifelse(grepl("bsc", short),"nex",protocol),
+       protocol=ifelse(grepl("clo", short),"clo",protocol)) 
 
 synthetic = synthetic %>% 
     mutate(sample_n = as.numeric(as.factor(sample)))
 
 # saveRDS(synthetic, "data/synthetic_2019_mirgff1.2.rds")
+
+
+##############
+# Real
+##############
+
+# cwrigth
+gff = read_tsv("input/real_carrie_mirtop.tsv") %>% 
+    janitor::clean_names() %>% 
+    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+normalized = norm(gff)
+cwrigth = gff %>%
+    annotate %>%
+    left_join(normalized, by = c("sample", "read")) %>% 
+    mutate(sample=gsub("nex_tflex", "nextflex", sample)) %>% 
+    separate(sample, c("protocol", "species", "tissue",
+                       "conc","srr","index"), remove = F, sep = "_", extra = "drop") %>%
+    unite("short", c("protocol", "conc"),
+          remove = FALSE) %>% 
+    mutate(lab="lab1") %>% 
+    select(-species,-tissue,-srr,-index) %>% 
+    distinct() %>% 
+    analysis %>% 
+    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+
+
+# kim
+gff = read_tsv("input/real_kim_mirtop.tsv") %>% 
+    janitor::clean_names() %>% 
+    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+normalized = norm(gff)
+kim = gff %>%
+    annotate %>%
+    left_join(normalized, by = c("sample", "read")) %>% 
+    separate(sample, c("lab", "protocol", "index"), remove = F, sep = "_") %>%
+    unite("short", c("protocol", "lab", "index"),
+          remove = FALSE) %>% 
+    select(-index) %>% 
+    distinct() %>% 
+    analysis %>% 
+    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+
+
+real = bind_rows(
+    kim %>% mutate(study="nkim"),
+    cwrigth %>% mutate(study="cwrigth")
+)
+
+real = real %>% 
+    mutate(protocol=ifelse(grepl("clo", sample),"clo",protocol),
+           protocol=ifelse(protocol=="illumina","ill",protocol),
+           protocol=ifelse(grepl("nextf", short),"nex",protocol),
+           protocol=ifelse(grepl("ts", short),"ill",protocol)) 
+
+real = real %>% 
+    mutate(sample_n = as.numeric(as.factor(sample)))
+
+# saveRDS(real, "data/real_2019_mirgff1.2.rds")

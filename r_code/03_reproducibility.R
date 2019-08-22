@@ -1,3 +1,10 @@
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+theme_update(
+    legend.justification = "center",
+    legend.position = "bottom")
+
 synthetic %>% 
     group_by(sample_n) %>% 
     summarize(minn=min(normalized)) %>% 
@@ -12,30 +19,6 @@ synthetic %>%
 synthetic %>% 
     filter(normalized>=cuto, pct>=5) %>% 
     distinct(read) -> seen5
-
-synthetic %>% 
-    filter(read %in% seen$read) %>% 
-    group_by(protocol) %>% 
-    mutate(maxsamples=length(unique(sample_n))) %>% 
-    group_by(read, iso, protocol) %>% 
-    summarize(seen=n()/unique(maxsamples)*100) %>% 
-    ggplot(aes(protocol, seen)) +
-    geom_boxplot() +
-    facet_wrap(~iso)
-    
-
-synthetic %>% 
-    filter(read %in% seen$read) %>% 
-    group_by(protocol) %>% 
-    mutate(maxsamples=length(unique(sample_n))) %>% 
-    filter(maxsamples>3) %>% 
-    group_by(read, iso, protocol, pct_cat) %>% 
-    summarize(seen=n()/unique(maxsamples)*100) %>% 
-    ggplot(aes(pct_cat, seen)) +
-    geom_boxplot() +
-    facet_grid(protocol~iso)
-
-
 
 cols = c("#343a40",#black
          "red4",#red
@@ -81,38 +64,39 @@ cols = c("#343a40",#black
 #     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
 #           panel.grid.minor = element_line(color="lightgrey")) 
 
+fct_nrep_pct=c("<25", "25-50", "50-75", ">75")
 
-synthetic %>% 
-    filter(read %in% seen$read) %>% 
+analyze = . %>% 
     group_by(protocol) %>% 
     mutate(maxsamples=length(unique(sample_n))) %>% 
     mutate(nmirs=length(unique(mi_rna[iso=="reference"]))) %>% 
     filter(maxsamples>3) %>% 
     group_by(read, iso, protocol, pct_cat, maxsamples, nmirs) %>% 
     summarise(n_rep=length(unique(sample_n))) %>% 
-    mutate(n_rep_cat=cut(n_rep/maxsamples, c(-1,0.25,0.5,0.75,1.1))) %>%
+    mutate(n_rep_cat=cut(n_rep/maxsamples,
+                         c(-1,0.25,0.5,0.75,1.1),
+                         fct_nrep_pct),
+           n_rep_cat=factor(n_rep_cat, levels=fct_nrep_pct)) %>%
     group_by(iso, protocol, pct_cat, n_rep_cat, maxsamples, nmirs) %>%
-    summarise(nreads=n(), nreads_mi = n()/unique(nmirs)) %>% 
+    summarise(nreads=n(), nreads_mi = n()/unique(nmirs))
+    
+synthetic %>% 
+    filter(read %in% seen$read) %>% 
+    analyze() %>% 
     ggplot(aes(pct_cat, y=nreads_mi, fill=n_rep_cat)) +
     geom_bar(stat = "identity") +
     facet_grid(iso~protocol, scale="free_y") +
     theme_clean() +
-    scale_fill_manual(values=cols[c(2,4,6,7)]) +
+    ylab("# of miRNAs") +
+    xlab("Importance") +
+    scale_fill_manual("% of replicates",values=cols[c(2,4,6,7)]) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ggsave("results/03_reproducibility/all_fixed_coveraged.pdf", width=12, height=10)
 
 
 synthetic %>% 
     filter(read %in% seen5$read) %>% 
-    group_by(protocol) %>% 
-    mutate(maxsamples=length(unique(sample_n))) %>% 
-    mutate(nmirs=length(unique(mi_rna[iso=="reference"]))) %>% 
-    filter(maxsamples>3) %>% 
-    group_by(read, iso, protocol, pct_cat, maxsamples, nmirs) %>% 
-    summarise(n_rep=length(unique(sample_n))) %>% 
-    mutate(n_rep_cat=cut(n_rep/maxsamples, c(-1,0.25,0.5,0.75,1.1))) %>%
-    group_by(iso, protocol, pct_cat, n_rep_cat, maxsamples, nmirs) %>%
-    summarise(nreads=n(), nreads_mi = n()/unique(nmirs)) %>% 
+    analyze() %>% 
     ggplot(aes(pct_cat, y=nreads_mi, fill=n_rep_cat)) +
     geom_bar(stat = "identity") +
     facet_grid(iso~protocol, scale="free_y") +
