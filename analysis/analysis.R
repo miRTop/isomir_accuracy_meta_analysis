@@ -18,19 +18,23 @@ label_iso = function(read, mix, snp, i3p, i5p, ia3p, ia5p){
     stop(c(read, mix, snp, i3p, i5p, ia3p, ia5p))
 }
 
-annotate = . %>% 
-#    gff %>%
-    group_by(read) %>% 
-    mutate(hits=n()) %>%
-    # only uniquely mapped
-    filter(hits==1) %>% 
+fix_iso = . %>% 
     mutate( # consider additiongs always non-template additions
            iso_add3p = ifelse(iso_3p > 0, iso_3p, iso_add3p),
            iso_3p = ifelse(iso_3p > 0, 0, iso_3p),
            iso_add5p = ifelse(iso_5p < 0, abs(iso_5p), 0),
            iso_5p = ifelse(iso_5p < 0, 0, iso_5p),
            iso_mix = str_count(variant,  "iso"),
-           iso_mix = ifelse(is.na(iso_mix), -1, iso_mix)) %>%
+           iso_mix = ifelse(is.na(iso_mix), -1, iso_mix))
+ 
+
+annotate = . %>% 
+#    gff %>%
+    fix_iso() %>%
+    group_by(read) %>% 
+    mutate(hits=n()) %>%
+    # only uniquely mapped
+    filter(hits==1) %>% 
     ungroup() %>% 
     # this will counts how many changes in total
     mutate(iso_snp= sapply(str_match_all(iso_snp_nt,"[0-9][ACTG-]"), function(n){nrow(n)}),
@@ -105,6 +109,7 @@ gff = read_tsv("input/synthetic_tewari_mirtop.tsv") %>%
 normalized = norm(gff)
 # get all sequence that are hsa annotated or not in mirx(remove potential crossmapping)
 tewari = gff %>% 
+    fix_iso
     annotate %>%
     left_join(normalized, by = c("sample", "read")) %>% 
     mutate(lab=stringr::str_extract(sample,"lab[0-9]"),
@@ -125,6 +130,7 @@ gff = read_tsv("input/synthetic_carrie_mirtop.tsv") %>%
     janitor::clean_names()
 normalized = norm(gff)
 carrie = gff %>% 
+    fix_iso %>%
     annotate %>%
     left_join(normalized, by = c("sample", "read")) %>% 
     mutate(lab=stringr::str_extract(sample,"lab[0-9]"),
@@ -159,6 +165,7 @@ gff = read_tsv("input/synthetic_kim_mirtop.tsv") %>%
     .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 kim = gff %>%
+    fix_iso %>%
     annotate %>%
     left_join(normalized, by = c("sample", "read")) %>% 
     separate(sample, c("lab", "protocol", "index"), remove = F, sep = "_") %>%
@@ -176,6 +183,7 @@ gff = read_tsv("input/synthetic_fratta_mirtop.tsv") %>%
     .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 fratta = gff %>%
+    fix_iso %>%
     annotate %>%
     left_join(normalized, by = c("sample", "read")) %>% 
     separate(sample, c("id","protocol", "index"), remove = F, sep = "_", extra = "drop") %>%
