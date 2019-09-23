@@ -1,5 +1,15 @@
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+theme_update(
+  legend.justification = "center",
+  legend.position = "bottom")
+
+synthetic = readRDS("data/synthetic_2019_srr_mirgff1.2.rds")
+real = readRDS("data/real_mirgff1.2.rds")
+
 data = bind_rows(real %>% mutate(type="real"),
-      synthetic %>% filter(study=="cwrigth" | study=="nkim") %>% mutate(type="synth")
+      synthetic %>% filter(study=="cwrigth" | study=="nkim" | study=="fratta") %>% mutate(type="synth")
       )
 
 data_sm = data %>% 
@@ -20,7 +30,7 @@ data_sm = data %>%
 
 axis_face = ifelse(grepl("real", sort(unique(data_sm$x))), "bold.italic", "plain")
 
-cols = RColorBrewer::brewer.pal(5, "Dark2")
+cols = RColorBrewer::brewer.pal(6, "Dark2")
 names(cols) = sort(unique(data_sm$protocol))
 axis_col = sapply(sort(unique(data_sm$x)), function(x){
     cols[strsplit(x, " ")[[1]][1]]

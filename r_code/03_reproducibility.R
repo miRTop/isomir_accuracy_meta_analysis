@@ -4,6 +4,8 @@ library(ggthemes)
 theme_update(
     legend.justification = "center",
     legend.position = "bottom")
+synthetic = readRDS("data/synthetic_2019_srr_mirgff1.2.rds")
+
 
 synthetic %>% 
     group_by(sample_n) %>% 

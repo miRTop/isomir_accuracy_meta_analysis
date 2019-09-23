@@ -1,4 +1,5 @@
 library(tidyverse)
+library(janitor)
 
 label_iso = function(read, mix, snp, i3p, i5p, ia3p, ia5p){
     if (mix == -1)
@@ -19,7 +20,7 @@ label_iso = function(read, mix, snp, i3p, i5p, ia3p, ia5p){
 }
 
 fix_iso = . %>% 
-    mutate( # consider additiongs always non-template additions
+    mutate( # consider additiongs always as non-template additions
            iso_add3p = ifelse(iso_3p > 0, iso_3p, iso_add3p),
            iso_3p = ifelse(iso_3p > 0, 0, iso_3p),
            iso_add5p = ifelse(iso_5p < 0, abs(iso_5p), 0),
@@ -105,95 +106,96 @@ norm = function(fn, cache=NULL){
 
 # tewari
 gff = read_tsv("input/synthetic_tewari_mirtop.tsv") %>% 
-    janitor::clean_names()
-normalized = norm(gff)
-# get all sequence that are hsa annotated or not in mirx(remove potential crossmapping)
-tewari = gff %>% 
-    fix_iso
+      clean_names()
+# split by protocol to speed up process
+protocols = sapply(stringi::stri_split(names(gff)[13:ncol(gff)],regex = "_"),function(x) paste(x[3:4], collapse = "_")) %>% unique
+
+tewari=lapply(protocols, function(p){
+  cat("\n\n",p,"\n\n")
+  normalized = norm(gff[,c(1:12, grep(p, names(gff)))])
+  gff[,c(1:12, grep(p, names(gff)))] %>% 
     annotate %>%
     left_join(normalized, by = c("sample", "read")) %>% 
     mutate(lab=stringr::str_extract(sample,"lab[0-9]"),
-           protocol=stringr::str_remove_all(sample, "_.*$"),
+           protocol=stringi::stri_replace_all_fixed(p,"_", ""),
            index = as.numeric(as.factor(sample))) %>% 
     unite("short", c("protocol", "lab", "index"), remove = FALSE) %>% 
     select(-index) %>% 
     distinct() %>% 
     analysis
+}) %>% bind_rows()
 
-tewari = tewari %>% 
-    mutate(short = ifelse(sample=="x4n_nex_tflex_lab8_synth_eq",
-                          "nextf_lab8_23",
-                          short))
 
 #carrie
 gff = read_tsv("input/synthetic_carrie_mirtop.tsv") %>% 
-    janitor::clean_names()
+  clean_names()
 normalized = norm(gff)
 carrie = gff %>% 
-    fix_iso %>%
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    mutate(lab=stringr::str_extract(sample,"lab[0-9]"),
-           protocol=stringr::str_remove_all(sample, "_.*$"),
-           index = as.numeric(as.factor(sample))) %>% 
-    unite("short", c("protocol", "lab", "index"), remove = FALSE) %>% 
-    select(-index) %>% 
-    distinct() %>% 
-    analysis
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  mutate(lab="lab1",
+         protocol=stringr::str_remove_all(sample, "^.*_synthetic_equimolar_pool_"),
+         index = as.numeric(as.factor(sample))) %>% 
+  unite("short", c("protocol", "lab", "index"), remove = FALSE) %>% 
+  select(-index) %>% 
+  distinct() %>% 
+  analysis
 
 # dsrg
 gff = read_tsv("input/synthetic_dsrg_mirtop.tsv") %>% 
-    janitor::clean_names() %>% 
+  clean_names() %>% 
     set_names(gsub("_mur_d", "_murd", names(.))) %>%
     .[,c(1:12, grep("_mur_", names(.)))] %>% 
     .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 dsrg = gff %>% 
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    separate(sample, remove = F, into = c("protocol", "source", 
-                                          "lab", "index", "snumber")) %>% 
-    unite("short", c("protocol", "lab", "index"),
-          remove = FALSE) %>% 
-    select(-index,-source) %>% 
-    distinct() %>% 
-    analysis
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  separate(sample, remove = F, into = c("protocol", "source", 
+                                        "lab", "index", "snumber")) %>% 
+  mutate(index = as.numeric(as.factor(sample))) %>% 
+  unite("short", c("protocol", "lab", "index"),
+        remove = FALSE) %>% 
+  select(-index,-source,-snumber) %>% 
+  distinct() %>% 
+  analysis
 
 # kim
 gff = read_tsv("input/synthetic_kim_mirtop.tsv") %>% 
-    janitor::clean_names() %>% 
+  clean_names() %>% 
     .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 kim = gff %>%
-    fix_iso %>%
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    separate(sample, c("lab", "protocol", "index"), remove = F, sep = "_") %>%
-    unite("short", c("protocol", "lab", "index"),
-          remove = FALSE) %>% 
-    select(-index) %>% 
-    distinct() %>% 
-    analysis %>% 
-    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  mutate(sample=gsub("he_la", "hela", sample)) %>% 
+  separate(sample, c("srr", "gsm", "source", "protocol"),
+           remove = F, sep = "_", extra = "drop") %>%
+  mutate(index = as.numeric(as.factor(sample)),
+         lab="lab1") %>% 
+  unite("short", c("protocol", "source", "index"),
+        remove = FALSE) %>% 
+  select(-index, -srr, -gsm, -source) %>% 
+  distinct() %>% 
+  analysis 
 
 
 # fratta
 gff = read_tsv("input/synthetic_fratta_mirtop.tsv") %>% 
-    janitor::clean_names() %>% 
-    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+  clean_names() %>% 
+  .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 fratta = gff %>%
-    fix_iso %>%
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    separate(sample, c("id","protocol", "index"), remove = F, sep = "_", extra = "drop") %>%
-    mutate(lab="fratta") %>% 
-    unite("short", c("protocol", "lab", "index"),
-          remove = FALSE) %>% 
-    select(-index,-id) %>% 
-    distinct() %>% 
-    analysis %>% 
-    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  separate(sample, c("id","protocol"), remove = F, sep = "_", extra = "drop") %>%
+  mutate(lab="lab1",
+         index = as.numeric(as.factor(sample))) %>% 
+  unite("short", c("protocol", "lab", "index"),
+        remove = FALSE) %>% 
+  select(-index,-id) %>% 
+  distinct() %>% 
+  analysis
 
 
 synthetic = bind_rows(
@@ -206,9 +208,10 @@ synthetic = bind_rows(
 
 
 synthetic = synthetic %>% 
-    mutate(protocol=ifelse(protocol=="tru","ill",protocol),
-       protocol=ifelse(protocol=="ilmn","ill",protocol),
-       protocol=ifelse(grepl("nextf", short),"nex",protocol),
+    mutate(protocol=ifelse(grepl("tru", short),"ill",protocol),
+       protocol=ifelse(protocol=="illumina","ill",protocol),
+       protocol=ifelse(grepl("nex", short),"nex",protocol),
+       protocol=ifelse(grepl("neb", short),"neb",protocol),
        protocol=ifelse(grepl("ts", short),"ill",protocol),
        protocol=ifelse(grepl("peb", short),"nex",protocol),
        protocol=ifelse(grepl("clt", short),"clo",protocol),
@@ -218,7 +221,7 @@ synthetic = synthetic %>%
 synthetic = synthetic %>% 
     mutate(sample_n = as.numeric(as.factor(sample)))
 
-# saveRDS(synthetic, "data/synthetic_2019_mirgff1.2.rds")
+# saveRDS(synthetic, "data/synthetic_2019_srr_mirgff1.2.rds")
 
 
 ##############
@@ -227,53 +230,75 @@ synthetic = synthetic %>%
 
 # cwrigth
 gff = read_tsv("input/real_carrie_mirtop.tsv") %>% 
-    janitor::clean_names() %>% 
-    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+  clean_names() %>% 
+  .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 cwrigth = gff %>%
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    mutate(sample=gsub("nex_tflex", "nextflex", sample)) %>% 
-    separate(sample, c("protocol", "species", "tissue",
-                       "conc","srr","index"), remove = F, sep = "_", extra = "drop") %>%
-    unite("short", c("protocol", "conc"),
-          remove = FALSE) %>% 
-    mutate(lab="lab1") %>% 
-    select(-species,-tissue,-srr,-index) %>% 
-    distinct() %>% 
-    analysis %>% 
-    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  mutate(sample=gsub("nex_tflex", "nextflex", sample)) %>% 
+  separate(sample, c("protocol", "species", "tissue",
+                     "conc","srr","index"), remove = F, sep = "_", extra = "drop") %>%
+  unite("short", c("protocol", "conc"),
+        remove = FALSE) %>% 
+  mutate(lab="lab1") %>% 
+  select(-species,-tissue,-srr,-index) %>% 
+  distinct() %>% 
+  analysis
 
 
 # kim
 gff = read_tsv("input/real_kim_mirtop.tsv") %>% 
-    janitor::clean_names() %>% 
-    .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+  clean_names() %>% 
+  .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
 normalized = norm(gff)
 kim = gff %>%
-    annotate %>%
-    left_join(normalized, by = c("sample", "read")) %>% 
-    separate(sample, c("lab", "protocol", "index"), remove = F, sep = "_") %>%
-    unite("short", c("protocol", "lab", "index"),
-          remove = FALSE) %>% 
-    select(-index) %>% 
-    distinct() %>% 
-    analysis %>% 
-    mutate(replicate=stringr::str_extract(short, "[0-9]$"))
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  mutate(sample=gsub("he_la", "hela", sample)) %>% 
+  separate(sample, c("srr","gsm","source", "protocol", "index"),
+           remove = F, sep = "_", extra = "drop") %>%
+  mutate(index = as.numeric(as.factor(sample)),
+         lab="lab1") %>% 
+  unite("short", c("protocol", "source", "index"),
+        remove = FALSE) %>% 
+  select(-index, -srr, -gsm, -source) %>% 
+  distinct() %>% 
+  analysis 
+
+# fratta
+gff = read_tsv("input/real_fratta_mirtop.tsv") %>% 
+  clean_names() %>% 
+  .[rowSums(as.matrix(.[,13:ncol(.)]))>0,]
+normalized = norm(gff)
+fratta = gff %>%
+  annotate %>%
+  left_join(normalized, by = c("sample", "read")) %>% 
+  separate(sample, c("id","protocol", "source"), remove = F, sep = "_", extra = "drop") %>%
+  mutate(lab="lab1",
+         index = as.numeric(as.factor(sample))) %>% 
+  unite("short", c("protocol", "source", "index"),
+        remove = FALSE) %>% 
+  select(-index,-id) %>% 
+  distinct() %>% 
+  analysis
 
 
 real = bind_rows(
     kim %>% mutate(study="nkim"),
-    cwrigth %>% mutate(study="cwrigth")
+    cwrigth %>% mutate(study="cwrigth"),
+    fratta %>% mutate(study="fratta")
 )
 
 real = real %>% 
     mutate(protocol=ifelse(grepl("clo", sample),"clo",protocol),
+           protocol=ifelse(grepl("clt", sample),"clo",protocol),
            protocol=ifelse(protocol=="illumina","ill",protocol),
+           protocol=ifelse(protocol=="tru","ill",protocol),
            protocol=ifelse(grepl("nextf", short),"nex",protocol),
-           protocol=ifelse(grepl("ts", short),"ill",protocol)) 
+           protocol=ifelse(grepl("bsc", short),"nex",protocol)) 
 
 real = real %>% 
     mutate(sample_n = as.numeric(as.factor(sample)))
 
-# saveRDS(real, "data/real_2019_mirgff1.2.rds")
+# saveRDS(real, "data/real_2019_srr_mirgff1.2.rds")

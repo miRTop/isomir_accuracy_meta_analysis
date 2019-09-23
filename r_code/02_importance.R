@@ -4,14 +4,15 @@ library(ggthemes)
 theme_update(
     legend.justification = "center",
     legend.position = "bottom")
-synthetic = readRDS("data/synthetic_2019_mirgff1.2.rds")
+synthetic = readRDS("data/synthetic_2019_srr_mirgff1.2.rds")
+use = synthetic %>% filter(!grepl("4n", protocol))
 
 prepare =  . %>% filter(ref_is_1 == 1) %>%
     dplyr::count(short, pct_cat, iso, protocol, study, libsize) %>% 
     group_by(short, protocol, study, libsize) %>% 
     mutate(pct_total = n/sum(n)*100)
 
-synthetic %>% 
+use %>% 
     group_by(sample_n, study, protocol) %>% 
     mutate(libsize=log10(sum(value)),
            iso=relevel(as.factor(iso), "reference")) %>% 
@@ -31,7 +32,7 @@ synthetic %>%
     ggsave("results/02_importance/all_samples_barplot.pdf", width=12, height = 9)
 
 
-synthetic %>% 
+use %>% 
     group_by(sample_n, study, protocol) %>% 
     mutate(libsize=log10(sum(value)),
            libsizen=n(),
@@ -55,7 +56,7 @@ synthetic %>%
     ggsave("results/02_importance/all_samples_barplot_abundance.pdf", width=12, height = 9)
 
 
-synthetic %>% 
+use %>% 
     filter(ref_is_1 == 1,total>500) %>%
     group_by(sample_n, study, protocol) %>%
     mutate(libsize=log10(sum(value)),
@@ -81,7 +82,7 @@ synthetic %>%
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ggsave("results/02_importance/all_samples_barplot_num_mirna.pdf", width=12, height = 9)    
 
-synthetic %>% 
+use %>% 
     filter(ref_is_1 == 1,total>500, pct>5) %>%
     group_by(sample_n, study, protocol) %>% 
     mutate(libsize=log10(sum(value)),
