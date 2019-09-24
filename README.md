@@ -58,7 +58,7 @@ Analysis was done with [bowtie]  + [mirtop] in a [snakemake] file located in eac
 
 Mirxplor reference was parsed to use only synthetic with an edit distance of 4 or more, and the alignments were filtered to keep only reads that mapped to those unique synthetic with a maximum of 4 changes. Code used for this is at [analysis](analysis/analysis.R) folder.
 
-Data is available for anyone at [aws mirtop space](https://mirtop-tewari-data.s3.amazonaws.com/synthetic_2019_mirgff1.2.rds). 
+Data is available for anyone at [aws mirtop space](https://mirtop-tewari-data.s3.amazonaws.com/synthetic_2019_srr_mirgff1.2.rds). 
 
 Currently contains: tewari, wrigth, kim and dsrg data.
 
@@ -66,7 +66,7 @@ Currently contains: tewari, wrigth, kim and dsrg data.
 
 For human data we use miRBase22 to map all sequences. Same filtering step were used here.
 
-Data is available for anyone at [aws mirtop space](https://mirtop-tewari-data.s3.amazonaws.com/real_2019_mirgff1.2.rds). 
+Data is available for anyone at [aws mirtop space](https://mirtop-tewari-data.s3.amazonaws.com/real_2019_srr_mirgff1.2.rds). 
 
 ## Tools
 
